@@ -1,9 +1,10 @@
-import { Component, inject, signal, resource } from '@angular/core';
+import { Component, inject, signal, resource, linkedSignal } from '@angular/core';
 import { SearchInputComponent } from "../../components/search-input/search-input.component";
 import { CountryListComponent } from "../../components/country-list/country-list.component";
 import { CountryService } from '../../services/country.service';
 import { firstValueFrom, of } from 'rxjs';
 import { rxResource } from '@angular/core/rxjs-interop';
+import { ActivatedRoute, Router } from '@angular/router';
 
 
 
@@ -14,30 +15,39 @@ import { rxResource } from '@angular/core/rxjs-interop';
 })
 export class ByCapitalPageComponent { 
   countryService = inject(CountryService);
-  query = signal('');
+  
+  //Query parameters
+  activatedRoute = inject(ActivatedRoute);
+  router = inject(Router); //para cambiar el query
+  queryParam = this.activatedRoute.snapshot.queryParamMap.get('query') ?? '';
+  query = linkedSignal(()=> this.queryParam);
 
   //Opción más óptima con rxResouce (Observable)  
-  // countryResource = rxResource({
-  //     params: () => ({ query: this.query() }),
-  //     loader: ({ params }) => {
-  
-  //       if(!params.query) return of([]);
-  
-  //       return this.countryService.searchByCapital(params.query);
-  //     },
-  //   });
+  countryResource = rxResource({
+    params: () => ({ query: this.query() }),
+    stream: ({ params }) => {
+      if (!params.query) return of([]);
+      this.router.navigate(['/country/by-capital'], {
+        queryParams: {
+          query: params.query,
+        }
+      });
+      
+      return this.countryService.searchByCapital(params.query);
+    },
+  });
 
   
   //Opción 2, con resource (promesas)
-  countryResource = resource({
-    params: () => ({ query: this.query() }),
-    loader: async({ params }) => {
+  // countryResource = resource({
+  //   params: () => ({ query: this.query() }),
+  //   loader: async({ params }) => {
 
-      if(!params.query) return [];
+  //     if(!params.query) return [];
 
-      return await firstValueFrom(this.countryService.searchByCapital(params.query));
-    },
-  });
+  //     return await firstValueFrom(this.countryService.searchByCapital(params.query));
+  //   },
+  // });
 
   //Opción 1: Esto fue reemplazado por lo que está en resource (promesas)
   // isLoading = signal(false);
