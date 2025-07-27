@@ -5,7 +5,8 @@ import { FooterComponent } from "./shared/components/footer/footer.component";
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet, FooterComponent],
-  templateUrl: './app.html'
+  templateUrl: './app.html',
+  standalone: true
 })
 export class App {
   //protected title = 'country-app';
